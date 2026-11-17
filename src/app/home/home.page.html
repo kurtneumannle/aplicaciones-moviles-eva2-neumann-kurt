@@ -1,0 +1,123 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-title>Mis Tareas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button aria-label="Importar tareas de la API" [disabled]="busy" (click)="importRemote()">
+        <ion-icon slot="icon-only" name="cloud-download-outline"></ion-icon>
+      </ion-button>
+      <ion-button aria-label="Sincronizar tareas" [disabled]="busy" (click)="sync()">
+        <ion-icon slot="icon-only" name="cloud-upload-outline"></ion-icon>
+      </ion-button>
+      <ion-button aria-label="Cerrar sesión" (click)="logout()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar color="primary" class="subbar">
+    <ion-note class="who">Usuario: {{ auth.currentUser() }}</ion-note>
+    <ion-note slot="end" class="counter">{{ taskService.tasks().length }} tareas · {{ pending }} sin sincronizar</ion-note>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <!-- Formulario: agregar / editar -->
+  <form class="task-form" (ngSubmit)="save()">
+    <h2>{{ isEditing ? 'Editar tarea' : 'Nueva tarea' }}</h2>
+    <ion-input
+      label="Título"
+      labelPlacement="floating"
+      fill="outline"
+      name="title"
+      maxlength="60"
+      [(ngModel)]="title"
+      placeholder="Ej: Estudiar Ionic"
+    ></ion-input>
+    <ion-input
+      label="Descripción"
+      labelPlacement="floating"
+      fill="outline"
+      name="description"
+      maxlength="140"
+      [(ngModel)]="description"
+      placeholder="Detalle de la tarea"
+    ></ion-input>
+
+    <!-- Foto adjunta: solo al crear (la cámara es del dispositivo) -->
+    @if (!isEditing) {
+      <div class="photo-row">
+        <ion-button type="button" fill="outline" (click)="takePhoto()" [disabled]="busy">
+          <ion-icon slot="start" name="camera-outline"></ion-icon>
+          {{ photo ? 'Cambiar foto' : 'Tomar foto' }}
+        </ion-button>
+        @if (photo) {
+          <div class="preview">
+            <img [src]="photo" alt="Foto adjunta a la tarea" />
+            <ion-button type="button" fill="clear" color="danger" size="small" aria-label="Quitar foto" (click)="removePhoto()">
+              <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
+            </ion-button>
+          </div>
+        }
+        <ion-note class="gps-note">
+          <ion-icon name="location-outline"></ion-icon> La ubicación se guarda al crear la tarea.
+        </ion-note>
+      </div>
+    }
+
+    <div class="form-actions">
+      <ion-button type="submit" expand="block" [disabled]="!canSave">
+        <ion-icon slot="start" [name]="isEditing ? 'save-outline' : 'add-circle-outline'"></ion-icon>
+        {{ isEditing ? 'Guardar' : 'Agregar tarea' }}
+      </ion-button>
+      @if (isEditing) {
+        <ion-button type="button" fill="outline" color="medium" (click)="cancelEdit()">
+          Cancelar
+        </ion-button>
+      }
+    </div>
+  </form>
+
+  <!-- Lista de tareas -->
+  <h2 class="section-title">Lista de tareas</h2>
+
+  @if (taskService.tasks().length > 0) {
+    <ion-list lines="full">
+      @for (task of taskService.tasks(); track trackById($index, task)) {
+        <ion-item [class.editing]="task.id === editingId">
+          <ion-checkbox slot="start" [checked]="task.completed" [attr.aria-label]="'Completada: ' + task.title" (ionChange)="toggle(task)"></ion-checkbox>
+          @if (task.photo) {
+            <ion-thumbnail slot="start">
+              <img [src]="task.photo" alt="Foto de la tarea" />
+            </ion-thumbnail>
+          }
+          <ion-label class="ion-text-wrap">
+            <h3 [class.done]="task.completed">{{ task.title }}</h3>
+            <p>{{ task.description || 'Sin descripción' }}</p>
+            @if (task.location) {
+              <p class="meta">
+                <ion-icon name="location-outline"></ion-icon> {{ formatLocation(task.location) }}
+              </p>
+            }
+            <p class="meta">
+              <ion-badge [color]="task.synced ? 'success' : 'warning'">{{ task.synced ? 'Sincronizada' : 'Pendiente' }}</ion-badge>
+              @if (task.origin === 'remote') {
+                <ion-badge color="medium">API</ion-badge>
+              }
+            </p>
+          </ion-label>
+          <ion-button slot="end" fill="clear" color="primary" aria-label="Editar tarea" (click)="edit(task)">
+            <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+          </ion-button>
+          <ion-button slot="end" fill="clear" color="danger" aria-label="Eliminar tarea" (click)="confirmDelete(task)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+      }
+    </ion-list>
+  } @else {
+    <div class="empty-state">
+      <ion-icon name="checkmark-done-outline"></ion-icon>
+      <p>No tienes tareas pendientes.<br />Agrega la primera o importa algunas desde la API.</p>
+    </div>
+  }
+
+</ion-content>

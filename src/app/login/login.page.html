@@ -1,0 +1,47 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-title>Mis Tareas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <div class="login-box">
+    <ion-icon name="checkmark-done-outline" class="logo"></ion-icon>
+    <h1>{{ mode === 'login' ? 'Ingresa a tu cuenta' : 'Crea tu cuenta' }}</h1>
+
+    <ion-segment [value]="mode" (ionChange)="setMode($any($event).detail.value)">
+      <ion-segment-button value="login"><ion-label>Ingresar</ion-label></ion-segment-button>
+      <ion-segment-button value="register"><ion-label>Registrarme</ion-label></ion-segment-button>
+    </ion-segment>
+
+    <form (ngSubmit)="submit()">
+      <ion-input
+        label="Usuario"
+        labelPlacement="floating"
+        fill="outline"
+        name="username"
+        autocomplete="username"
+        maxlength="20"
+        [(ngModel)]="username"
+      ></ion-input>
+      <ion-input
+        label="Clave"
+        labelPlacement="floating"
+        fill="outline"
+        type="password"
+        name="password"
+        [autocomplete]="mode === 'login' ? 'current-password' : 'new-password'"
+        [(ngModel)]="password"
+      ></ion-input>
+
+      @if (error) {
+        <ion-note color="danger" role="alert" class="error">{{ error }}</ion-note>
+      }
+
+      <ion-button type="submit" expand="block" [disabled]="!canSubmit">
+        {{ mode === 'login' ? 'Ingresar' : 'Crear cuenta' }}
+      </ion-button>
+    </form>
+    <p class="hint">Tus tareas se guardan en este dispositivo y cada usuario ve solo las suyas.</p>
+  </div>
+</ion-content>
